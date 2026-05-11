@@ -27,31 +27,62 @@ class PlayerController: ObservableObject {
         errorMessage = nil
         currentMediaURL = url
 
-        let asset = AVAsset(url: url)
-        let playerItem = AVPlayerItem(asset: asset)
-
-        if player == nil {
-            player = AVPlayer(playerItem: playerItem)
-            setupTimeObserver()
-        } else {
-            player?.replaceCurrentItem(with: playerItem)
+        // Check if file exists and is readable
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            errorMessage = "File not found: \(url.lastPathComponent)"
+            isLoading = false
+            return
         }
 
-        player?.volume = volume
+        let asset = AVAsset(url: url)
 
-        // Observe playback status
-        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime, object: playerItem)
-            .sink { [weak self] _ in
-                Task { @MainActor in
-                    self?.isPlaying = false
-                    self?.seek(to: 0)
-                }
-            }
-            .store(in: &cancellables)
-
-        // Load duration
+        // Load asset properties first to check if it's playable
         Task {
             do {
+                let isPlayable = try await asset.load(.isPlayable)
+                let tracks = try await asset.load(.tracks)
+
+                guard isPlayable else {
+                    await MainActor.run {
+                        self.errorMessage = "Format not supported: \(url.pathExtension.uppercased())\n\nAVFoundation cannot decode this file.\nSupported: MP4, MOV, M4V"
+                        self.isLoading = false
+                    }
+                    return
+                }
+
+                guard !tracks.isEmpty else {
+                    await MainActor.run {
+                        self.errorMessage = "No playable tracks found in file"
+                        self.isLoading = false
+                    }
+                    return
+                }
+
+                // Asset is valid, create player
+                await MainActor.run {
+                    let playerItem = AVPlayerItem(asset: asset)
+
+                    if self.player == nil {
+                        self.player = AVPlayer(playerItem: playerItem)
+                        self.setupTimeObserver()
+                    } else {
+                        self.player?.replaceCurrentItem(with: playerItem)
+                    }
+
+                    self.player?.volume = self.volume
+
+                    // Observe playback status
+                    NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime, object: playerItem)
+                        .sink { [weak self] _ in
+                            Task { @MainActor in
+                                self?.isPlaying = false
+                                self?.seek(to: 0)
+                            }
+                        }
+                        .store(in: &self.cancellables)
+                }
+
+                // Load duration
                 let duration = try await asset.load(.duration)
                 await MainActor.run {
                     self.duration = CMTimeGetSeconds(duration)
@@ -60,7 +91,7 @@ class PlayerController: ObservableObject {
                 }
             } catch {
                 await MainActor.run {
-                    self.errorMessage = "Failed to load media: \(error.localizedDescription)"
+                    self.errorMessage = "Failed to load media: \(error.localizedDescription)\n\nFile: \(url.lastPathComponent)"
                     self.isLoading = false
                 }
             }
