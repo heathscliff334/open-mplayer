@@ -38,8 +38,14 @@ class PlayerController: ObservableObject {
         if MediaConverter.shared.needsConversion(url: url) {
             Task {
                 do {
+                    await MainActor.run {
+                        self.errorMessage = "Converting \(url.pathExtension.uppercased()) to MP4...\nThis may take a moment."
+                    }
                     let convertedURL = try await MediaConverter.shared.convert(url: url) { progress in
                         // Update progress if needed
+                    }
+                    await MainActor.run {
+                        self.errorMessage = nil
                     }
                     await loadAVAsset(from: convertedURL)
                 } catch {

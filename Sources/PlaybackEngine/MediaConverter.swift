@@ -27,18 +27,19 @@ class MediaConverter {
 
         let outputURL = tempDirectory.appendingPathComponent(url.deletingPathExtension().lastPathComponent + ".mp4")
 
-        // Remove existing temp file
-        try? FileManager.default.removeItem(at: outputURL)
+        // Check if already converted
+        if FileManager.default.fileExists(atPath: outputURL.path) {
+            return outputURL
+        }
 
-        // FFmpeg command: fast conversion with copy when possible
+        // FFmpeg command: ultra-fast conversion with stream copy
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/ffmpeg")
         process.arguments = [
             "-i", url.path,
-            "-c:v", "copy",  // Copy video stream if compatible
-            "-c:a", "aac",   // Convert audio to AAC
-            "-movflags", "+faststart",  // Optimize for streaming
-            "-y",  // Overwrite output
+            "-c", "copy",  // Copy all streams without re-encoding
+            "-movflags", "+faststart",
+            "-y",
             outputURL.path
         ]
 
@@ -46,8 +47,36 @@ class MediaConverter {
         process.standardError = pipe
 
         try process.run()
+        process.waitUntilExit()
 
-        // Monitor progress (simplified - just wait for completion)
+        guard process.terminationStatus == 0 else {
+            // If copy failed, try with re-encoding (slower but more compatible)
+            return try await convertWithReencoding(url: url, outputURL: outputURL)
+        }
+
+        return outputURL
+    }
+
+    private func convertWithReencoding(url: URL, outputURL: URL) async throws -> URL {
+        try? FileManager.default.removeItem(at: outputURL)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/ffmpeg")
+        process.arguments = [
+            "-i", url.path,
+            "-c:v", "libx264",  // Re-encode video
+            "-preset", "ultrafast",  // Fastest encoding
+            "-crf", "23",
+            "-c:a", "aac",
+            "-movflags", "+faststart",
+            "-y",
+            outputURL.path
+        ]
+
+        let pipe = Pipe()
+        process.standardError = pipe
+
+        try process.run()
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
