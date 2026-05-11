@@ -12,7 +12,7 @@ struct PlayerView: View {
             Color.black
 
             if let player = playerController.player {
-                VideoPlayer(player: player)
+                VideoPlayerLayerView(player: player)
                     .onTapGesture(count: 2) {
                         toggleFullscreen()
                     }

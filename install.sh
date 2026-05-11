@@ -107,3 +107,7 @@ echo "To uninstall:"
 echo "  rm -rf /Applications/OpenMPlayer.app"
 echo ""
 echo "Enjoy your new media player! 🎬"
+
+# Remove quarantine attribute to prevent Gatekeeper issues
+echo "🔓 Removing quarantine attribute..."
+xattr -dr com.apple.quarantine /Applications/OpenMPlayer.app 2>/dev/null || true
