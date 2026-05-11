@@ -20,12 +20,6 @@ class PlayerController: ObservableObject {
         setupObservers()
     }
 
-    deinit {
-        if let observer = timeObserver {
-            player?.removeTimeObserver(observer)
-        }
-    }
-
     // MARK: - Media Loading
 
     func loadMedia(from url: URL) {
@@ -45,26 +39,32 @@ class PlayerController: ObservableObject {
 
         player?.volume = volume
 
+        // Observe playback status
+        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime, object: playerItem)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.isPlaying = false
+                    self?.seek(to: 0)
+                }
+            }
+            .store(in: &cancellables)
+
         // Load duration
         Task {
             do {
                 let duration = try await asset.load(.duration)
-                self.duration = CMTimeGetSeconds(duration)
-                self.isLoading = false
-                self.play()
+                await MainActor.run {
+                    self.duration = CMTimeGetSeconds(duration)
+                    self.isLoading = false
+                    self.play()
+                }
             } catch {
-                self.errorMessage = "Failed to load media: \(error.localizedDescription)"
-                self.isLoading = false
+                await MainActor.run {
+                    self.errorMessage = "Failed to load media: \(error.localizedDescription)"
+                    self.isLoading = false
+                }
             }
         }
-
-        // Observe playback status
-        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime, object: playerItem)
-            .sink { [weak self] _ in
-                self?.isPlaying = false
-                self?.seek(to: 0)
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Playback Controls
@@ -121,7 +121,9 @@ class PlayerController: ObservableObject {
     private func setupTimeObserver() {
         let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            self?.currentTime = CMTimeGetSeconds(time)
+            Task { @MainActor in
+                self?.currentTime = CMTimeGetSeconds(time)
+            }
         }
     }
 }
