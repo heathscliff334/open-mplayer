@@ -32,10 +32,17 @@ A modern, native macOS media player built with Swift and SwiftUI. Designed for m
 
 ## Installation
 
-### Option 1: Download Pre-built App (Coming Soon)
+### Option 1: Quick Install Script (Recommended)
+```bash
+cd open-mplayer
+./install.sh
+```
+This will build the app and install it to `/Applications/OpenMPlayer.app`.
+
+### Option 2: Download Pre-built App (Coming Soon)
 Download the latest release from the [Releases](https://github.com/yourusername/open-mplayer/releases) page.
 
-### Option 2: Build from Source
+### Option 3: Build from Source
 
 1. **Clone the repository**
    ```bash
