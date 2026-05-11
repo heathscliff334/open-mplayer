@@ -52,18 +52,27 @@ struct PlayerView: View {
                             isHoveringControls = hovering
                             if hovering {
                                 hideControlsTask?.cancel()
+                                showControls = true
                             } else {
                                 scheduleHideControls()
                             }
                         }
                 }
             }
+            .onAppear {
+                scheduleHideControls()
+            }
+            .onChange(of: playerController.isPlaying) { _, isPlaying in
+                if isPlaying {
+                    scheduleHideControls()
+                } else {
+                    hideControlsTask?.cancel()
+                    showControls = true
+                }
+            }
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             handleDrop(providers: providers)
-        }
-        .onAppear {
-            scheduleHideControls()
         }
     }
 
@@ -108,8 +117,10 @@ struct PlayerView: View {
         hideControlsTask = Task {
             try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
             if !Task.isCancelled && !isHoveringControls {
-                withAnimation {
-                    showControls = false
+                await MainActor.run {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showControls = false
+                    }
                 }
             }
         }
