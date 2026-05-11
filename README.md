@@ -22,10 +22,17 @@ A modern, native macOS media player built with Swift and SwiftUI. Designed for m
 ## Supported Formats
 
 - **Video**: MP4, MOV, M4V (native AVFoundation support)
+- **Video with conversion**: MKV, AVI, WebM, FLV, WMV (requires FFmpeg)
 - **Audio**: MP3, AAC, FLAC, WAV, M4A
-- **Limited Support**: AVI, WebM (depends on codecs)
-- **Not Supported**: MKV (requires external codec libraries like FFmpeg)
 - **Subtitles**: SRT, VTT (planned)
+
+### FFmpeg Requirement for MKV
+To play MKV and other non-native formats, install FFmpeg:
+```bash
+brew install ffmpeg
+```
+
+The app will automatically convert these files to MP4 on-the-fly for playback.
 
 ## Requirements
 
