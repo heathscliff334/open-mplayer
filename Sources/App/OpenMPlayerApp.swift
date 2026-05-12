@@ -15,7 +15,9 @@ struct OpenMPlayerApp: App {
                 .onDisappear {
                     playerController.stopAndCleanup()
                 }
+                .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
         }
+        .handlesExternalEvents(matching: ["*"])
         .windowResizability(.contentSize)
         .defaultSize(width: 1280, height: 720)
         .commands {
