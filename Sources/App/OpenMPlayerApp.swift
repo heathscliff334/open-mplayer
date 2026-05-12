@@ -16,6 +16,11 @@ struct OpenMPlayerApp: App {
                     openFile()
                 }
                 .keyboardShortcut("o", modifiers: .command)
+
+                Button("Open URL...") {
+                    openURL()
+                }
+                .keyboardShortcut("u", modifiers: .command)
             }
 
             CommandMenu("Playback") {
@@ -47,6 +52,23 @@ struct OpenMPlayerApp: App {
                     playerController.adjustVolume(by: -0.1)
                 }
                 .keyboardShortcut(.downArrow, modifiers: [])
+
+                Divider()
+
+                Button("Speed Up") {
+                    playerController.setPlaybackRate(playerController.playbackRate + 0.25)
+                }
+                .keyboardShortcut("]", modifiers: [])
+
+                Button("Speed Down") {
+                    playerController.setPlaybackRate(playerController.playbackRate - 0.25)
+                }
+                .keyboardShortcut("[", modifiers: [])
+
+                Button("Normal Speed") {
+                    playerController.setPlaybackRate(1.0)
+                }
+                .keyboardShortcut("\\", modifiers: [])
             }
         }
     }
@@ -62,6 +84,27 @@ struct OpenMPlayerApp: App {
 
         if panel.runModal() == .OK, let url = panel.url {
             playerController.loadMedia(from: url)
+        }
+    }
+
+    private func openURL() {
+        let alert = NSAlert()
+        alert.messageText = "Open URL"
+        alert.informativeText = "Enter a video URL (HTTP/HTTPS):"
+        alert.alertStyle = .informational
+
+        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        textField.placeholderString = "https://example.com/video.mp4"
+        alert.accessoryView = textField
+
+        alert.addButton(withTitle: "Open")
+        alert.addButton(withTitle: "Cancel")
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            let urlString = textField.stringValue.trimmingCharacters(in: .whitespaces)
+            if let url = URL(string: urlString), url.scheme == "http" || url.scheme == "https" {
+                playerController.loadMedia(from: url)
+            }
         }
     }
 }

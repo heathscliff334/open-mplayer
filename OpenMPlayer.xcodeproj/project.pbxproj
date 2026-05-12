@@ -13,6 +13,7 @@
 		A1000031000000000000001 /* VideoPlayerLayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000032000000000000001 /* VideoPlayerLayerView.swift */; };
 		A1000007000000000000001 /* PlayerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008000000000000001 /* PlayerController.swift */; };
 		A1000033000000000000001 /* MediaConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000034000000000000001 /* MediaConverter.swift */; };
+		A1000035000000000000001 /* PlaybackHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000036000000000000001 /* PlaybackHistory.swift */; };
 		A1000009000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000010000000000000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -24,6 +25,7 @@
 		A1000032000000000000001 /* VideoPlayerLayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerLayerView.swift; sourceTree = "<group>"; };
 		A1000008000000000000001 /* PlayerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerController.swift; sourceTree = "<group>"; };
 		A1000034000000000000001 /* MediaConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaConverter.swift; sourceTree = "<group>"; };
+		A1000036000000000000001 /* PlaybackHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistory.swift; sourceTree = "<group>"; };
 		A1000010000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000012000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -98,6 +100,7 @@
 			children = (
 				A1000008000000000000001 /* PlayerController.swift */,
 				A1000034000000000000001 /* MediaConverter.swift */,
+				A1000036000000000000001 /* PlaybackHistory.swift */,
 			);
 			path = PlaybackEngine;
 			sourceTree = "<group>";
@@ -176,6 +179,7 @@
 				A1000005000000000000001 /* ControlsView.swift in Sources */,
 				A1000007000000000000001 /* PlayerController.swift in Sources */,
 				A1000033000000000000001 /* MediaConverter.swift in Sources */,
+				A1000035000000000000001 /* PlaybackHistory.swift in Sources */,
 				A1000031000000000000001 /* VideoPlayerLayerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -3,6 +3,7 @@ import AVKit
 
 struct VideoPlayerLayerView: NSViewRepresentable {
     let player: AVPlayer
+    var onLayerReady: ((AVPlayerLayer) -> Void)?
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
@@ -10,6 +11,12 @@ struct VideoPlayerLayerView: NSViewRepresentable {
         playerLayer.videoGravity = .resizeAspect
         view.wantsLayer = true
         view.layer = playerLayer
+
+        // Notify when layer is ready
+        DispatchQueue.main.async {
+            onLayerReady?(playerLayer)
+        }
+
         return view
     }
 

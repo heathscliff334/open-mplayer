@@ -1,6 +1,7 @@
 import AVFoundation
 import Combine
 import SwiftUI
+import AVKit
 
 @MainActor
 class PlayerController: ObservableObject {
@@ -9,10 +10,14 @@ class PlayerController: ObservableObject {
     @Published var currentTime: Double = 0
     @Published var duration: Double = 0
     @Published var volume: Float = 1.0
+    @Published var playbackRate: Float = 1.0
     @Published var currentMediaURL: URL?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var pipController: AVPictureInPictureController?
+    @Published var isPipActive = false
 
+    private var pipDelegate: PipDelegate?
     private var timeObserver: Any?
     private var cancellables = Set<AnyCancellable>()
 
@@ -26,6 +31,14 @@ class PlayerController: ObservableObject {
         isLoading = true
         errorMessage = nil
         currentMediaURL = url
+
+        // For remote URLs, skip file checks and conversion
+        if !url.isFileURL {
+            Task {
+                await loadAVAsset(from: url)
+            }
+            return
+        }
 
         // Check if file exists and is readable
         guard FileManager.default.fileExists(atPath: url.path) else {
@@ -63,7 +76,7 @@ class PlayerController: ObservableObject {
     }
 
     private func loadAVAsset(from url: URL) async {
-        let asset = AVAsset(url: url)
+        let asset = AVURLAsset(url: url)
 
         // Load asset properties first to check if it's playable
         do {
@@ -72,7 +85,11 @@ class PlayerController: ObservableObject {
 
             guard isPlayable else {
                 await MainActor.run {
-                    self.errorMessage = "Format not supported: \(url.pathExtension.uppercased())\n\nAVFoundation cannot decode this file.\nSupported: MP4, MOV, M4V"
+                    if url.isFileURL {
+                        self.errorMessage = "Format not supported: \(url.pathExtension.uppercased())\n\nAVFoundation cannot decode this file.\nSupported: MP4, MOV, M4V"
+                    } else {
+                        self.errorMessage = "Stream not playable: \(url.absoluteString)\n\nThe remote media cannot be decoded."
+                    }
                     self.isLoading = false
                 }
                 return
@@ -80,7 +97,7 @@ class PlayerController: ObservableObject {
 
             guard !tracks.isEmpty else {
                 await MainActor.run {
-                    self.errorMessage = "No playable tracks found in file"
+                    self.errorMessage = "No playable tracks found"
                     self.isLoading = false
                 }
                 return
@@ -115,11 +132,22 @@ class PlayerController: ObservableObject {
             await MainActor.run {
                 self.duration = CMTimeGetSeconds(duration)
                 self.isLoading = false
+
+                // Check for saved position and resume
+                if let url = self.currentMediaURL, url.isFileURL,
+                   let savedPosition = PlaybackHistory.shared.getPosition(for: url) {
+                    self.seek(to: savedPosition)
+                }
+
                 self.play()
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load media: \(error.localizedDescription)\n\nFile: \(url.lastPathComponent)"
+                if url.isFileURL {
+                    self.errorMessage = "Failed to load media: \(error.localizedDescription)\n\nFile: \(url.lastPathComponent)"
+                } else {
+                    self.errorMessage = "Failed to load stream: \(error.localizedDescription)\n\nURL: \(url.absoluteString)"
+                }
                 self.isLoading = false
             }
         }
@@ -128,13 +156,18 @@ class PlayerController: ObservableObject {
     // MARK: - Playback Controls
 
     func play() {
-        player?.play()
+        player?.rate = playbackRate
         isPlaying = true
     }
 
     func pause() {
         player?.pause()
         isPlaying = false
+
+        // Save position when pausing
+        if let url = currentMediaURL, url.isFileURL {
+            PlaybackHistory.shared.savePosition(for: url, position: currentTime, duration: duration)
+        }
     }
 
     func togglePlayPause() {
@@ -166,6 +199,31 @@ class PlayerController: ObservableObject {
         player?.volume = volume
     }
 
+    func setPlaybackRate(_ rate: Float) {
+        playbackRate = max(0.25, min(2.0, rate))
+        if isPlaying {
+            player?.rate = playbackRate
+        }
+    }
+
+    func setupPictureInPicture(with layer: AVPlayerLayer) {
+        guard AVPictureInPictureController.isPictureInPictureSupported() else { return }
+
+        pipDelegate = PipDelegate(controller: self)
+        pipController = AVPictureInPictureController(playerLayer: layer)
+        pipController?.delegate = pipDelegate
+    }
+
+    func togglePictureInPicture() {
+        guard let pipController = pipController else { return }
+
+        if pipController.isPictureInPictureActive {
+            pipController.stopPictureInPicture()
+        } else {
+            pipController.startPictureInPicture()
+        }
+    }
+
     // MARK: - Private Methods
 
     private func setupObservers() {
@@ -180,8 +238,37 @@ class PlayerController: ObservableObject {
         let interval = CMTime(seconds: 0.1, preferredTimescale: 600)
         timeObserver = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             Task { @MainActor in
-                self?.currentTime = CMTimeGetSeconds(time)
+                guard let self = self else { return }
+                self.currentTime = CMTimeGetSeconds(time)
+
+                // Periodically save position (every 5 seconds)
+                if Int(self.currentTime) % 5 == 0,
+                   let url = self.currentMediaURL, url.isFileURL {
+                    PlaybackHistory.shared.savePosition(for: url, position: self.currentTime, duration: self.duration)
+                }
             }
+        }
+    }
+}
+
+// MARK: - Picture in Picture Delegate
+
+private class PipDelegate: NSObject, AVPictureInPictureControllerDelegate {
+    weak var controller: PlayerController?
+
+    init(controller: PlayerController) {
+        self.controller = controller
+    }
+
+    func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        Task { @MainActor in
+            controller?.isPipActive = true
+        }
+    }
+
+    func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        Task { @MainActor in
+            controller?.isPipActive = false
         }
     }
 }

@@ -71,6 +71,12 @@ if [ ! -d "$APP_PATH" ]; then
     exit 1
 fi
 
+# Show build location
+FULL_APP_PATH="$(cd "$(dirname "$APP_PATH")" && pwd)/$(basename "$APP_PATH")"
+echo "📍 Built app location:"
+echo "   $FULL_APP_PATH"
+echo ""
+
 # Check if app already exists in Applications
 if [ -d "/Applications/OpenMPlayer.app" ]; then
     echo "⚠️  OpenMPlayer.app already exists in /Applications"
@@ -102,6 +108,10 @@ echo ""
 echo "To launch:"
 echo "  • Open from Applications folder"
 echo "  • Or run: open /Applications/OpenMPlayer.app"
+echo ""
+echo "Manual installation (if needed):"
+echo "  cp -r \"$FULL_APP_PATH\" /Applications/"
+echo "  xattr -dr com.apple.quarantine /Applications/OpenMPlayer.app"
 echo ""
 echo "To uninstall:"
 echo "  rm -rf /Applications/OpenMPlayer.app"

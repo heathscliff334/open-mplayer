@@ -6,13 +6,33 @@ struct PlayerView: View {
     @State private var isHoveringControls = false
     @State private var showControls = true
     @State private var hideControlsTask: Task<Void, Never>?
+    @State private var gestureOffset: CGSize = .zero
+    @State private var gestureType: GestureType?
+    @State private var showGestureFeedback = false
+    @State private var gestureFeedbackText = ""
+
+    enum GestureType {
+        case seek
+        case volume
+    }
 
     var body: some View {
         ZStack {
             Color.black
 
             if let player = playerController.player {
-                VideoPlayerLayerView(player: player)
+                VideoPlayerLayerView(player: player) { layer in
+                    playerController.setupPictureInPicture(with: layer)
+                }
+                    .gesture(
+                        DragGesture(minimumDistance: 20)
+                            .onChanged { value in
+                                handleGesture(value: value)
+                            }
+                            .onEnded { _ in
+                                endGesture()
+                            }
+                    )
                     .onTapGesture(count: 2) {
                         toggleFullscreen()
                     }
@@ -41,6 +61,19 @@ struct PlayerView: View {
                 }
             }
 
+            // Gesture feedback overlay
+            if showGestureFeedback {
+                VStack {
+                    Text(gestureFeedbackText)
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(16)
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(12)
+                }
+                .transition(.opacity)
+            }
+
             VStack {
                 Spacer()
 
@@ -59,20 +92,31 @@ struct PlayerView: View {
                         }
                 }
             }
-            .onAppear {
-                scheduleHideControls()
-            }
-            .onChange(of: playerController.isPlaying) { _, isPlaying in
-                if isPlaying {
-                    scheduleHideControls()
-                } else {
-                    hideControlsTask?.cancel()
-                    showControls = true
-                }
-            }
         }
         .onDrop(of: [.fileURL], isTargeted: nil) { providers in
             handleDrop(providers: providers)
+        }
+        .onAppear {
+            scheduleHideControls()
+        }
+        .onChange(of: playerController.isPlaying) { _, isPlaying in
+            if isPlaying {
+                scheduleHideControls()
+            } else {
+                hideControlsTask?.cancel()
+                showControls = true
+            }
+        }
+        .onContinuousHover { phase in
+            switch phase {
+            case .active:
+                if playerController.player != nil {
+                    showControls = true
+                    scheduleHideControls()
+                }
+            case .ended:
+                break
+            }
         }
     }
 
@@ -129,5 +173,67 @@ struct PlayerView: View {
     private func toggleFullscreen() {
         guard let window = NSApplication.shared.keyWindow else { return }
         window.toggleFullScreen(nil)
+    }
+
+    private func handleGesture(value: DragGesture.Value) {
+        let translation = value.translation
+
+        // Determine gesture type based on direction
+        if gestureType == nil {
+            if abs(translation.width) > abs(translation.height) {
+                gestureType = .seek
+            } else {
+                gestureType = .volume
+            }
+        }
+
+        gestureOffset = translation
+
+        switch gestureType {
+        case .seek:
+            let seekAmount = Double(translation.width) / 10.0 // 10 pixels = 1 second
+            let newTime = playerController.currentTime + seekAmount
+            let clampedTime = max(0, min(newTime, playerController.duration))
+            let delta = seekAmount > 0 ? "+\(Int(abs(seekAmount)))s" : "\(Int(seekAmount))s"
+            gestureFeedbackText = delta
+            showGestureFeedback = true
+
+        case .volume:
+            let volumeDelta = Float(-translation.height) / 200.0 // 200 pixels = full range
+            let newVolume = max(0, min(1, playerController.volume + volumeDelta))
+            gestureFeedbackText = "Volume: \(Int(newVolume * 100))%"
+            showGestureFeedback = true
+
+        case .none:
+            break
+        }
+    }
+
+    private func endGesture() {
+        switch gestureType {
+        case .seek:
+            let seekAmount = Double(gestureOffset.width) / 10.0
+            playerController.seek(by: seekAmount)
+
+        case .volume:
+            let volumeDelta = Float(-gestureOffset.height) / 200.0
+            playerController.adjustVolume(by: volumeDelta)
+
+        case .none:
+            break
+        }
+
+        gestureType = nil
+        gestureOffset = .zero
+
+        // Hide feedback after delay
+        Task {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            await MainActor.run {
+                withAnimation {
+                    showGestureFeedback = false
+                }
+            }
+        }
     }
 }

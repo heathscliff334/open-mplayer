@@ -4,6 +4,7 @@ struct ControlsView: View {
     @EnvironmentObject var playerController: PlayerController
     @State private var isSeeking = false
     @State private var seekPosition: Double = 0
+    @State private var showSpeedMenu = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -48,6 +49,43 @@ struct ControlsView: View {
                 Text(formatTime(playerController.duration))
                     .font(.system(.body, design: .monospaced))
                     .foregroundColor(.white.opacity(0.7))
+
+                // Playback speed
+                Menu {
+                    ForEach([0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0], id: \.self) { speed in
+                        Button(action: {
+                            playerController.setPlaybackRate(Float(speed))
+                        }) {
+                            HStack {
+                                Text(String(format: "%.2fx", speed))
+                                if abs(playerController.playbackRate - Float(speed)) < 0.01 {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Text(String(format: "%.2fx", playerController.playbackRate))
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .menuStyle(BorderlessButtonMenuStyle())
+                .frame(width: 60)
+
+                // Picture in Picture
+                if playerController.pipController != nil {
+                    Button(action: {
+                        playerController.togglePictureInPicture()
+                    }) {
+                        Image(systemName: playerController.isPipActive ? "pip.exit" : "pip.enter")
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
 
                 // Fullscreen
                 Button(action: toggleFullscreen) {

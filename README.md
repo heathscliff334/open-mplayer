@@ -1,5 +1,8 @@
 # Open MPlayer
 
+> **Frustrated that your favorite media player stopped working after upgrading to macOS Tahoe?**  
+> Open MPlayer is a modern, native alternative built specifically for macOS 15.0+. No more crashes, no more compatibility issues—just smooth, reliable video playback with a beautiful native interface.
+
 A modern, native macOS media player built with Swift and SwiftUI. Designed for macOS Tahoe (15.0) and later.
 
 ## Features
@@ -10,13 +13,16 @@ A modern, native macOS media player built with Swift and SwiftUI. Designed for m
 - 📁 Drag-and-drop file support
 - ⌨️ Keyboard shortcuts
 - 🌓 Dark mode support
-- 📋 Playlist management
+- ⚡ Playback speed control (0.25x - 2.0x)
+- 🖼️ Picture-in-Picture mode
+- 🌐 HTTP/HTTPS streaming support
+- 🎯 Gesture controls (swipe to seek, volume)
+- 💾 Smart resume (remembers playback position)
+- 🔄 Auto-conversion for MKV/AVI/WebM files
 
 ### Planned
 - 📝 Subtitle support (SRT, VTT)
 - 🎵 Multiple audio track selection
-- 🖼️ Picture-in-picture mode
-- 🌐 Streaming support (HTTP/HTTPS)
 - 🎛️ Video filters and adjustments
 
 ## Supported Formats
@@ -92,14 +98,18 @@ Download the latest release from the [Releases](https://github.com/yourusername/
 ### Opening Files
 - **Drag and drop** a video file onto the app window
 - **File menu**: `File > Open...` (Cmd + O)
+- **URL streaming**: `File > Open URL...` (Cmd + U)
 - **Right-click** a video file and select "Open With > OpenMPlayer"
 
 ### Keyboard Shortcuts
 - `Space` - Play/Pause
 - `←` / `→` - Seek backward/forward 5 seconds
 - `↑` / `↓` - Volume up/down
+- `[` / `]` - Decrease/increase playback speed
+- `\` - Reset to normal speed (1.0x)
 - `F` - Toggle fullscreen
 - `Cmd + O` - Open file
+- `Cmd + U` - Open URL
 - `Cmd + W` - Close window
 - `Cmd + Q` - Quit app
 
@@ -107,7 +117,14 @@ Download the latest release from the [Releases](https://github.com/yourusername/
 - Click the play/pause button or press `Space`
 - Drag the timeline scrubber to seek
 - Adjust volume with the slider or arrow keys
+- Click speed menu to change playback rate
+- Click PiP button to enter Picture-in-Picture mode
 - Double-click video for fullscreen
+
+### Gesture Controls
+- **Horizontal swipe** on video - Seek forward/backward
+- **Vertical swipe** on video - Adjust volume
+- Visual feedback shows seek amount or volume level
 
 ## Development
 
@@ -116,22 +133,22 @@ Download the latest release from the [Releases](https://github.com/yourusername/
 OpenMPlayer/
 ├── Sources/
 │   ├── App/
-│   │   ├── OpenMPlayerApp.swift      # App entry point
-│   │   └── KeyboardShortcuts.swift   # Keyboard handling
+│   │   └── OpenMPlayerApp.swift      # App entry point
 │   ├── UI/
 │   │   ├── PlayerView.swift          # Main player interface
 │   │   ├── ControlsView.swift        # Playback controls
-│   │   └── PlaylistView.swift        # Playlist sidebar
-│   ├── PlaybackEngine/
-│   │   ├── PlayerController.swift    # AVFoundation wrapper
-│   │   ├── MediaLoader.swift         # File loading
-│   │   └── SubtitleRenderer.swift    # Subtitle support
-│   └── FileManagement/
-│       └── FileHandler.swift         # File operations
+│   │   └── VideoPlayerLayerView.swift # Video rendering layer
+│   └── PlaybackEngine/
+│       ├── PlayerController.swift    # AVFoundation wrapper
+│       ├── MediaConverter.swift      # FFmpeg integration
+│       └── PlaybackHistory.swift     # Smart resume
 ├── Resources/
-│   └── Assets.xcassets/              # App icons and images
-├── Tests/
-│   └── OpenMPlayerTests/             # Unit tests
+│   ├── Assets.xcassets/              # App icons and images
+│   ├── Info.plist                    # App configuration
+│   ├── OpenMPlayer.entitlements      # App permissions
+│   └── open-mplayer-logo.png         # Original logo file
+├── install.sh                        # Quick install script
+├── IMPLEMENTATION_PLAN.md            # Feature implementation guide
 └── AGENTS.md                         # Agent collaboration guide
 ```
 
