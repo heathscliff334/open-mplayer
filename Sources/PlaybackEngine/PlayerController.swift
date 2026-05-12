@@ -206,6 +206,33 @@ class PlayerController: ObservableObject {
         }
     }
 
+    func stopAndCleanup() {
+        // Stop playback
+        player?.pause()
+        isPlaying = false
+
+        // Save current position before cleanup
+        if let url = currentMediaURL, url.isFileURL {
+            PlaybackHistory.shared.savePosition(for: url, position: currentTime, duration: duration)
+        }
+
+        // Remove time observer
+        if let observer = timeObserver {
+            player?.removeTimeObserver(observer)
+            timeObserver = nil
+        }
+
+        // Clear player
+        player?.replaceCurrentItem(with: nil)
+        player = nil
+
+        // Reset state
+        currentTime = 0
+        duration = 0
+        currentMediaURL = nil
+        errorMessage = nil
+    }
+
     func setupPictureInPicture(with layer: AVPlayerLayer) {
         guard AVPictureInPictureController.isPictureInPictureSupported() else { return }
 

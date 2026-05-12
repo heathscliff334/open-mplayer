@@ -5,15 +5,38 @@ struct OpenMPlayerApp: App {
     @StateObject private var playerController = PlayerController()
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "player") {
             PlayerView()
                 .environmentObject(playerController)
                 .frame(minWidth: 800, minHeight: 600)
                 .onOpenURL { url in
                     playerController.loadMedia(from: url)
                 }
+                .onDisappear {
+                    playerController.stopAndCleanup()
+                }
         }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 1280, height: 720)
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("Open...") {
+                    openFile()
+                }
+                .keyboardShortcut("o", modifiers: .command)
+
+                Button("Open URL...") {
+                    openURL()
+                }
+                .keyboardShortcut("u", modifiers: .command)
+
+                Divider()
+
+                Button("Set as Default Player...") {
+                    showDefaultPlayerInstructions()
+                }
+            }
+
             CommandGroup(replacing: .newItem) {
                 Button("Open...") {
                     openFile()
