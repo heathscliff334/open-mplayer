@@ -223,4 +223,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 - 🐛 [Report bugs](https://github.com/yourusername/open-mplayer/issues)
 - 💡 [Request features](https://github.com/yourusername/open-mplayer/issues)
-- 📧 Contact: your.email@example.com
+- 📧 Contact: kevin@laurenscodes.space
