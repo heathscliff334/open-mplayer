@@ -5,6 +5,18 @@
 
 A modern, native macOS media player built with Swift and SwiftUI. Designed for macOS Tahoe (15.0) and later.
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/screenshot-1.png" width="45%" alt="Main player interface">
+  <img src="screenshots/screenshot-2.png" width="45%" alt="Playback controls">
+</p>
+
+<p align="center">
+  <img src="screenshots/screenshot-3.png" width="45%" alt="Speed control menu">
+  <img src="screenshots/screenshot-4.png" width="45%" alt="Video playback">
+</p>
+
 ## Features
 
 ### Current
