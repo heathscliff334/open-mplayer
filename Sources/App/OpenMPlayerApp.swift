@@ -21,6 +21,12 @@ struct OpenMPlayerApp: App {
                     openURL()
                 }
                 .keyboardShortcut("u", modifiers: .command)
+
+                Divider()
+
+                Button("Set as Default Player...") {
+                    showDefaultPlayerInstructions()
+                }
             }
 
             CommandMenu("Playback") {
@@ -106,5 +112,23 @@ struct OpenMPlayerApp: App {
                 playerController.loadMedia(from: url)
             }
         }
+    }
+
+    private func showDefaultPlayerInstructions() {
+        let alert = NSAlert()
+        alert.messageText = "Set Open MPlayer as Default Video Player"
+        alert.informativeText = """
+        To set Open MPlayer as your default video player:
+
+        1. Right-click any video file (MP4, MOV, MKV, etc.)
+        2. Select "Get Info"
+        3. Under "Open with:", select "OpenMPlayer"
+        4. Click "Change All..." to apply to all files of this type
+
+        Repeat for each video format you want to open with Open MPlayer.
+        """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 }
