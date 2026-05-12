@@ -9,6 +9,9 @@ struct OpenMPlayerApp: App {
             PlayerView()
                 .environmentObject(playerController)
                 .frame(minWidth: 800, minHeight: 600)
+                .onOpenURL { url in
+                    playerController.loadMedia(from: url)
+                }
         }
         .commands {
             CommandGroup(replacing: .newItem) {
